@@ -25,10 +25,15 @@
   const app = document.getElementById("app");
   const views = document.getElementById("views");
   const picker = document.getElementById("picker");
+  const whole = document.getElementById("whole");
   const tabs = [...document.querySelectorAll(".tab")];
 
   function rhyme() {
     return window.RHYMES.find((item) => item.id === state.rhymeId) || window.RHYMES[0];
+  }
+
+  function wholeOf(id) {
+    return (window.WHOLE || []).find((item) => item.id === id) || { lines: [], cues: [] };
   }
 
   function load() {
@@ -168,7 +173,7 @@
       <div class="kicker"><p class="eyebrow">This week’s rhyme</p><span class="week-chip">This week</span></div>
       ${art(item)}
       <h1 class="rhyme-title">${escapeHtml(item.title)}</h1>
-      <p class="mean">${escapeHtml(item.english)}</p>
+      <button class="btn btn-secondary" type="button" data-whole>See whole rhyme</button>
       <div class="progress" role="radiogroup" aria-label="This week’s step">${steps}</div>
       <button class="btn btn-voice${state.playing && state.origin === "week" ? " is-playing" : ""}" id="voiceBtn" type="button" data-audio="week" aria-pressed="${state.playing && state.origin === "week" ? "true" : "false"}">
         <span class="icon-swap" aria-hidden="true">${iconPlay("icon-play", 20)}${iconPause("icon-pause", 20)}</span>
@@ -191,7 +196,6 @@
       return `<article class="line-card${waiting ? " waiting" : ""}">
         <div class="line-head"><span class="tag ${row.role}">${tag(row.role)}</span><span class="turn">${escapeHtml(turn(item, row))}</span></div>
         <div class="lyric">${partsHtml(row.parts, key)}</div>
-        <p class="mean">${escapeHtml(row.mean)}</p>
       </article>`;
     }).join("");
     const caption = item.theme === "ziggy"
@@ -201,6 +205,7 @@
     return `<section class="view is-on ${ziggy}" data-view="sing">
       <p class="eyebrow">Sing with me</p>
       <h1 class="title">${escapeHtml(item.short)}</h1>
+      <button class="btn btn-secondary" type="button" data-whole>See whole rhyme</button>
       ${item.theme === "ziggy" ? `<div class="ziggy-bounce">${art(item)}</div>` : art(item)}
       ${caption}
       <div class="audio-bar">
@@ -227,12 +232,12 @@
     const clapIndex = state.clap == null ? item.defaultClap : state.clap;
     const clap = item.claps[clapIndex];
     const buttons = clap.pieces.map((piece, index) => `<button class="clap" type="button" data-clap="${index}"><span class="syl">${escapeHtml(piece)}</span><span class="n">clap</span></button>`).join("");
-    const chips = item.claps.map((word, index) => `<button class="wchip${index === clapIndex ? " on" : ""}" type="button" data-word="${index}"><div class="w">${escapeHtml(word.pieces.join("-"))}</div><div class="mean">${escapeHtml(word.mean)}</div></button>`).join("");
+    const chips = item.claps.map((word, index) => `<button class="wchip${index === clapIndex ? " on" : ""}" type="button" data-word="${index}"><div class="w">${escapeHtml(word.pieces.join("-"))}</div></button>`).join("");
     const families = item.families.map((family, familyIndex) => {
       const twins = family.words.map((word, wordIndex) => {
         const key = family.solo ? `${familyIndex}:${wordIndex}` : `${familyIndex}`;
         const on = state.family === key ? " is-pop" : "";
-        return `<button class="twin${word.wide ? " wide" : ""}${on}" type="button" data-family="${familyIndex}" data-twin="${wordIndex}"><div class="w">${escapeHtml(word.w)}</div><div class="mean">${escapeHtml(word.mean)}</div></button>`;
+        return `<button class="twin${word.wide ? " wide" : ""}${on}" type="button" data-family="${familyIndex}" data-twin="${wordIndex}"><div class="w">${escapeHtml(word.w)}</div></button>`;
       }).join("");
       const title = family.title || "Rhyme twins";
       const note = family.note || "they sound the same at the end";
@@ -249,7 +254,7 @@
           <div class="ane-chip"><img src="${item.image}" width="1152" height="864" alt=""></div>
           <div>
             <p class="hop">${escapeHtml(clap.say)}</p>
-            <p class="mean">${escapeHtml(clap.mean)} · ${escapeHtml(clap.aside || "clap along")}</p>
+            <p class="mean">${escapeHtml(clap.aside || "clap along")}</p>
           </div>
         </div>
         <div class="claps">${buttons}</div>
@@ -260,7 +265,7 @@
   }
 
   function renderStory(item) {
-    const steps = item.steps.map((step, index) => `<article class="scard"><div class="num">${index + 1}</div><div class="scaption"><div class="w">${escapeHtml(step.w)}</div><p class="mean">${escapeHtml(step.mean)}</p></div></article>`).join("");
+    const steps = item.steps.map((step, index) => `<article class="scard"><div class="num">${index + 1}</div><div class="scaption"><div class="w">${escapeHtml(step.w)}</div></div></article>`).join("");
     return `<section class="view is-on" data-view="story">
       <h1 class="eyebrow">Tell the story</h1>
       <p class="mean" style="margin-top:2px">${escapeHtml(item.storyNote)}</p>
@@ -269,12 +274,10 @@
       <section class="speak">
         <div class="line-head"><span class="tag amma">Amma</span><span class="turn">You say it</span></div>
         <p class="speak-q">${escapeHtml(item.speak.prompt)}</p>
-        <p class="mean">${escapeHtml(item.speak.promptMean)}</p>
         <div class="answer-row">
           <span class="tag samaya">Samaya</span>
           <button class="answer-chip" type="button">
             <div class="w">${escapeHtml(item.speak.answer)}</div>
-            <div class="mean">${escapeHtml(item.speak.answerMean)}</div>
           </button>
         </div>
       </section>
@@ -290,11 +293,21 @@
         <span class="pick-art"><img src="${item.image}" width="1152" height="864" alt=""></span>
         <span class="pick-copy">
           <span class="pick-title">${escapeHtml(item.title)}</span>
-          <span class="mean">${escapeHtml(item.english)}</span>
           ${on ? '<span class="week-chip pick-now">This week</span>' : ""}
         </span>
       </button>`;
     }).join("");
+  }
+
+  function renderWhole() {
+    const item = rhyme();
+    const pack = wholeOf(item.id);
+    const lines = pack.lines.map((line, index) => `<li class="whole-line" data-whole-line>
+      <span class="whole-num">${index + 1}</span>
+      <p class="whole-text">${escapeHtml(line.text)}</p>
+    </li>`).join("");
+    document.getElementById("wholeBody").innerHTML = `<p class="whole-kicker title">${escapeHtml(item.title)}</p>
+      <ol class="whole-list">${lines}</ol>`;
   }
 
   function render() {
@@ -311,6 +324,7 @@
       tab.setAttribute("aria-selected", on ? "true" : "false");
     });
     renderPicker();
+    renderWhole();
   }
 
   function setTab(id) {
@@ -337,6 +351,7 @@
   }
 
   function openPicker() {
+    closeWhole();
     picker.hidden = false;
     document.body.classList.add("picker-open");
     const close = picker.querySelector(".picker-close");
@@ -347,6 +362,22 @@
     if (picker.hidden) return;
     picker.hidden = true;
     document.body.classList.remove("picker-open");
+  }
+
+  function openWhole() {
+    closePicker();
+    renderWhole();
+    whole.hidden = false;
+    whole.querySelector(".picker-sheet").scrollTop = 0;
+    document.body.classList.add("picker-open");
+    const close = whole.querySelector(".picker-close");
+    if (close) close.focus();
+  }
+
+  function closeWhole() {
+    if (whole.hidden) return;
+    whole.hidden = true;
+    if (picker.hidden) document.body.classList.remove("picker-open");
   }
 
   function squish(el) {
@@ -440,6 +471,8 @@
       render();
     } else if (target.dataset.rhyme) setRhyme(target.dataset.rhyme);
     else if (target.hasAttribute("data-picker")) openPicker();
+    else if (target.hasAttribute("data-whole")) openWhole();
+    else if (target.hasAttribute("data-close-whole")) closeWhole();
     else if (target.hasAttribute("data-close-picker") || target.classList.contains("picker-backdrop")) closePicker();
     else if (target.dataset.audio) toggleAudio(target.dataset.audio);
     else if (target.dataset.chunk) {
@@ -475,7 +508,9 @@
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closePicker();
+    if (event.key !== "Escape") return;
+    if (!whole.hidden) closeWhole();
+    else closePicker();
   });
 
   picker.addEventListener("click", (event) => {

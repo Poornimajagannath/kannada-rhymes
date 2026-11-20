@@ -183,9 +183,11 @@ test("every rhyme, every screen, stays on the phone", async ({ page }) => {
       localStorage.setItem("samaya-kannada-rhymes", JSON.stringify({ rhymeId, step: "hear" }));
     }, id);
     await page.reload();
+    const englishTitle = await page.evaluate((rhymeId) => window.RHYMES.find((item) => item.id === rhymeId).english, id);
     for (const tab of ["Week", "Sing", "Words", "Story"]) {
       await page.getByRole("tab", { name: tab }).click();
       await expect(page.locator(`[data-view="${tab.toLowerCase()}"]`)).toBeVisible();
+      await expect(page.getByText(englishTitle, { exact: true })).toHaveCount(0);
       await expectLayout(page);
     }
   }
@@ -253,6 +255,43 @@ test("a dropped recording can play, and a chunk can pause", async ({ page }, tes
   await expect(page.locator("#chunkStatus")).toHaveText("Paused at the blank for Samaya", { timeout: 8000 });
 });
 
+test("whole rhyme lists every verified line", async ({ page }) => {
+  test.setTimeout(90_000);
+  const whole = JSON.parse(fs.readFileSync(new URL("../data/whole-rhymes.json", import.meta.url), "utf8"));
+  const errors = trackErrors(page);
+  await page.goto("/");
+  for (const pack of whole) {
+    await page.evaluate((rhymeId) => {
+      localStorage.setItem("samaya-kannada-rhymes", JSON.stringify({ rhymeId, step: "hear" }));
+    }, pack.id);
+    await page.reload();
+    for (const tab of ["Week", "Sing"]) {
+      await page.getByRole("tab", { name: tab }).click();
+      await page.getByRole("button", { name: "See whole rhyme" }).click();
+      const dialog = page.getByRole("dialog", { name: "Whole rhyme" });
+      await expect(dialog).toBeVisible();
+      const rows = dialog.locator("[data-whole-line]");
+      await expect(rows, pack.id).toHaveCount(pack.lines.length);
+      const texts = (await rows.locator(".whole-text").allTextContents()).map((text) => text.trim());
+      expect(texts, pack.id).toEqual(pack.lines.map((line) => line.text));
+      const sizes = await dialog.locator(".whole-text").evaluateAll((nodes) => (
+        nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize))
+      ));
+      expect(Math.min(...sizes)).toBeGreaterThanOrEqual(18);
+      const sheet = await dialog.innerText();
+      expect(sheet).not.toMatch(/[\u0C80-\u0CFF]/);
+      for (const line of pack.lines) {
+        expect(sheet).not.toContain(line.mean);
+      }
+      await expect(page.getByText(pack.lines[0].mean, { exact: true })).toHaveCount(0);
+      await expectLayout(page);
+      await dialog.getByRole("button", { name: "Close" }).click();
+      await expect(dialog).toBeHidden();
+    }
+  }
+  expect(errors, errors.join("\n")).toEqual([]);
+});
+
 test("iphone 14 screenshots", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "iphone-14");
   const dir = "/opt/cursor/artifacts";
@@ -280,4 +319,24 @@ test("iphone 14 screenshots", async ({ page }, testInfo) => {
   await settle(page);
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${dir}/iphone14-story.png`, fullPage: false });
+
+  await page.getByRole("tab", { name: "Week" }).click();
+  await page.getByRole("button", { name: "See whole rhyme" }).click();
+  const aaneSheet = page.getByRole("dialog", { name: "Whole rhyme" });
+  await expect(aaneSheet).toBeVisible();
+  await aaneSheet.evaluate(async (el) => {
+    await Promise.all(el.getAnimations({ subtree: true }).map((anim) => anim.finished));
+  });
+  await page.screenshot({ path: `${dir}/iphone14-whole-aane.png`, fullPage: false });
+  await aaneSheet.getByRole("button", { name: "Close", exact: true }).click();
+
+  await page.getByRole("button", { name: "All 6" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /Nayimari Nayimari/ }).click();
+  await page.getByRole("button", { name: "See whole rhyme" }).click();
+  const ziggySheet = page.getByRole("dialog", { name: "Whole rhyme" });
+  await expect(ziggySheet).toBeVisible();
+  await ziggySheet.evaluate(async (el) => {
+    await Promise.all(el.getAnimations({ subtree: true }).map((anim) => anim.finished));
+  });
+  await page.screenshot({ path: `${dir}/iphone14-whole-nayimari.png`, fullPage: false });
 });
