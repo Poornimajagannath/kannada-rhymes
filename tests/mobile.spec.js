@@ -140,6 +140,20 @@ async function expectLayout(page) {
       if (drawnW > box.width + 1 || drawnH > box.height + 1) problems.push("image draws outside its box");
     }
     if (/[\u0C80-\u0CFF]/.test(document.body.innerText)) problems.push("Kannada script is on the page");
+    for (const badge of document.querySelectorAll(".more-item .badge")) {
+      const thumb = badge.closest(".thumb");
+      if (!thumb) {
+        problems.push("recording mark is not on a thumbnail");
+        continue;
+      }
+      const frame = thumb.getBoundingClientRect();
+      const mark = badge.getBoundingClientRect();
+      const cx = mark.left + mark.width / 2;
+      const cy = mark.top + mark.height / 2;
+      if (cx < frame.left - 4 || cx > frame.right + 4 || cy < frame.top - 4 || cy > frame.bottom + 4) {
+        problems.push("recording mark sits off its thumbnail");
+      }
+    }
     return problems.slice(0, 12);
   });
   expect(problems, problems.join("\n")).toEqual([]);
