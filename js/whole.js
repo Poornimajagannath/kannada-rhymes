@@ -1,0 +1,306 @@
+/* Verified transliterations only. Do not edit a line. */
+window.WHOLE = [
+  {
+    "id": "aane-banthondu-aane",
+    "lines": [
+      {
+        "text": "Aane banthondu aane",
+        "mean": "An elephant has come, one elephant!"
+      },
+      {
+        "text": "Yaavooraane?",
+        "mean": "Which town is this elephant from?"
+      },
+      {
+        "text": "Bijaapuradaane",
+        "mean": "It is the elephant from Bijapur."
+      },
+      {
+        "text": "Illige yaake bantu?",
+        "mean": "Why did it come here?"
+      },
+      {
+        "text": "Daari tappi bantu",
+        "mean": "It lost its way and arrived."
+      },
+      {
+        "text": "Kobri bella tantu",
+        "mean": "It brought dried coconut and jaggery."
+      },
+      {
+        "text": "Makkaligellaa hanchtu",
+        "mean": "It shared them with all the children."
+      },
+      {
+        "text": "Aane oodi hoytu",
+        "mean": "Then the elephant ran away."
+      }
+    ],
+    "cues": [
+      "On every “aane”, Samaya swings one arm like a trunk and takes a heavy elephant step.",
+      "Amma asks “Yaavooraane?” and waits. Samaya answers “Bijaapuradaane!” Then both mime sharing kobri-bella and run off on “oodi hoytu”."
+    ]
+  },
+  {
+    "id": "nayi-mari-nayi-mari",
+    "lines": [
+      {
+        "text": "Nayimari nayimari tindi beke?",
+        "mean": "Puppy, puppy, do you want a snack?"
+      },
+      {
+        "text": "Tindi beku teertha beku ella beku",
+        "mean": "I want a snack, I want a drink, I want everything!"
+      },
+      {
+        "text": "Nayimari ninage tindi eke beku?",
+        "mean": "Puppy, why do you need a snack?"
+      },
+      {
+        "text": "Tindu gattiyaagi maneya kaayabeku",
+        "mean": "So I can eat, grow strong, and guard the house."
+      },
+      {
+        "text": "Nayimari kaLLa bandarenu maaduve?",
+        "mean": "Puppy, if a thief comes, what will you do?"
+      },
+      {
+        "text": "LoL loL bau endu koogi aaduve",
+        "mean": "I will bark lol-lol bow and chase about!"
+      },
+      {
+        "text": "Jaanamari taaLu hogi tindi taruvenu",
+        "mean": "Wait, clever pup — I will go and bring a snack."
+      },
+      {
+        "text": "Taa ninna maneya naanu kaayutiruvenu",
+        "mean": "There — I will stay and keep watch over your house."
+      }
+    ],
+    "cues": [
+      "Amma asks each question and waits. Samaya answers as Ziggy, especially a clear “Tindi beku!” and “maneya kaayabeku”.",
+      "On “kaLLa bandarenu maaduve?” Samaya barks a big “LoL loL bau!” then sits like a guard dog while Amma pretends to fetch the tindi."
+    ]
+  },
+  {
+    "id": "ondu-eradu-baalele-haradu",
+    "lines": [
+      {
+        "text": "Ondu eradu baaleLe haradu",
+        "mean": "One, two — spread the banana leaf."
+      },
+      {
+        "text": "Mooru naalku anna haaku",
+        "mean": "Three, four — put down the rice."
+      },
+      {
+        "text": "Aidu aaru beLe saaru",
+        "mean": "Five, six — serve the beLe saaru (dal rasam)."
+      },
+      {
+        "text": "EeLu entu paLyake dantu",
+        "mean": "Seven, eight — greens (dantu) for the palya."
+      },
+      {
+        "text": "Ombattu hattu ele mudurettu",
+        "mean": "Nine, ten — fold up the leaf."
+      },
+      {
+        "text": "Ondarinda hattu heegittu",
+        "mean": "From one to ten, that is how it went."
+      },
+      {
+        "text": "Ootada aatavu mugidittu",
+        "mean": "The meal-game was done."
+      }
+    ],
+    "cues": [
+      "Sit on the floor and mime each serving: spread a leaf (1–2), drop rice (3–4), pour saaru (5–6), add palya (7–8), then fold the leaf (9–10).",
+      "Samaya holds up fingers and says the number on each line. Amma can pause so she can shout “Aidu!” or “Hattu!” by herself."
+    ]
+  },
+  {
+    "id": "karadi-bettakke-hoyithu",
+    "lines": [
+      {
+        "text": "Karadi bettakke hoyitu",
+        "mean": "The bear went to the hill."
+      },
+      {
+        "text": "Karadi bettakke hoyitu",
+        "mean": "The bear went to the hill."
+      },
+      {
+        "text": "Karadi bettakke hoyitu",
+        "mean": "The bear went to the hill."
+      },
+      {
+        "text": "Nota nodalu",
+        "mean": "To have a look around."
+      },
+      {
+        "text": "Noditenaadu?",
+        "mean": "What did it see?"
+      },
+      {
+        "text": "Noditenaadu?",
+        "mean": "What did it see?"
+      },
+      {
+        "text": "Bettada innondu bhaaga",
+        "mean": "The other side of the hill."
+      },
+      {
+        "text": "Bettada innondu bhaaga",
+        "mean": "The other side of the hill."
+      },
+      {
+        "text": "Karadi noditu",
+        "mean": "That is what the bear saw."
+      },
+      {
+        "text": "Halasu tanditu",
+        "mean": "It brought jackfruit."
+      },
+      {
+        "text": "Jenu kalasitu",
+        "mean": "It mixed in honey."
+      },
+      {
+        "text": "MarigaLige tinnisi",
+        "mean": "It fed its cubs."
+      },
+      {
+        "text": "Taanu tindu teegitu",
+        "mean": "Then it ate and was happily full."
+      }
+    ],
+    "cues": [
+      "Stomp like a bear up the hill on the first lines, then peek over a ridge and let Samaya answer “Noditenaadu?” with “Halasu!”",
+      "Mime scooping jackfruit, dripping honey, feeding the cubs first, then pat a full tummy on “teegitu”."
+    ]
+  },
+  {
+    "id": "chandamama-odi-baa",
+    "lines": [
+      {
+        "text": "Chandamama oodi baa",
+        "mean": "Moon uncle, run over here!"
+      },
+      {
+        "text": "Chandadinda aadu baa",
+        "mean": "Come and play with us, all brightness and charm."
+      },
+      {
+        "text": "Bandu odanaadu baa",
+        "mean": "Come and be our playmate."
+      },
+      {
+        "text": "Munde munde oodi baa",
+        "mean": "Run on ahead, come along!"
+      },
+      {
+        "text": "Sakkare kaddi tartini",
+        "mean": "I will bring a sugar-stick."
+      },
+      {
+        "text": "Mikkare ninguu kodtini",
+        "mean": "If any is left, I will give you some too."
+      },
+      {
+        "text": "Nakkare naanu nagtini",
+        "mean": "If you smile, I will smile."
+      },
+      {
+        "text": "Attare naanu aLtini",
+        "mean": "If you cry, I will cry too."
+      },
+      {
+        "text": "Ellige hodaru bartiiyaa",
+        "mean": "Wherever I go, you still come along."
+      },
+      {
+        "text": "Allee dooradali irtiiyaa",
+        "mean": "Yet you stay far away, over there."
+      },
+      {
+        "text": "Mellage sannage aagtiiyaa",
+        "mean": "Slowly you grow small (as a slim crescent)."
+      },
+      {
+        "text": "Hinde munde hogtiiyaa",
+        "mean": "You go behind and in front of us."
+      },
+      {
+        "text": "Chandamama oodi baa",
+        "mean": "Moon uncle, run over here!"
+      },
+      {
+        "text": "Chandadinda aadu baa",
+        "mean": "Come and play with us, all brightness and charm."
+      }
+    ],
+    "cues": [
+      "Stand at the window, point to the moon, and pat the floor on each “oodi baa” and “aadu baa” so Samaya can call Chandamama.",
+      "Offer a pretend sakkare-kaddi, then tiptoe “mellage sannage” and freeze like a little crescent."
+    ]
+  },
+  {
+    "id": "tarakka-bindige",
+    "lines": [
+      {
+        "text": "Tarakka bindige naa neerige hoguve",
+        "mean": "Sister, bring the little pot — I am going for water."
+      },
+      {
+        "text": "Taare bindigeya",
+        "mean": "Do bring the little pot."
+      },
+      {
+        "text": "Bindige odedare onde kaasu",
+        "mean": "If the pot breaks, it costs only one kaasu (a tiny coin)."
+      },
+      {
+        "text": "Taare bindigeya",
+        "mean": "Do bring the little pot."
+      },
+      {
+        "text": "Govinda embo gunavuLLa neerige",
+        "mean": "For water that holds the goodness of the name Govinda."
+      },
+      {
+        "text": "Taare bindigeya",
+        "mean": "Do bring the little pot."
+      },
+      {
+        "text": "Aavaava pariyali amrutada paanake",
+        "mean": "For a drink of that nectar, in every way."
+      },
+      {
+        "text": "Taare bindigeya",
+        "mean": "Do bring the little pot."
+      },
+      {
+        "text": "Bindu Maadhavana ghattakke hoguve",
+        "mean": "I will go to Bindu Madhava's ghat."
+      },
+      {
+        "text": "Taare bindigeya",
+        "mean": "Do bring the little pot."
+      },
+      {
+        "text": "Purandara ViTThalage abhisheka maaduve",
+        "mean": "I will do abhisheka for Purandara Vittala."
+      },
+      {
+        "text": "Taare bindigeya",
+        "mean": "Do bring the little pot."
+      }
+    ],
+    "cues": [
+      "On every “Taare bindigeya”, Samaya places a small cup in Amma’s hands and says the refrain herself.",
+      "Walk to the ghat, dip the pot, then Samaya pours a pretend abhisheka and can say “ViTThala” or “Govinda”."
+    ]
+  }
+]
+;

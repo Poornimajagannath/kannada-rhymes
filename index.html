@@ -34,8 +34,22 @@
       <div class="picker-list" id="pickerList"></div>
     </div>
   </div>
+  <div class="picker" id="whole" hidden>
+    <button class="picker-backdrop" type="button" data-close-whole aria-label="Close the whole rhyme"></button>
+    <div class="picker-sheet" role="dialog" aria-modal="true" aria-labelledby="wholeTitle">
+      <div class="picker-head">
+        <div>
+          <p class="eyebrow">All the lines</p>
+          <h2 class="title" id="wholeTitle">Whole rhyme</h2>
+        </div>
+        <button class="picker-close" type="button" data-close-whole>Close</button>
+      </div>
+      <div id="wholeBody"></div>
+    </div>
+  </div>
   <noscript class="noscript">Samaya’s Kannada Rhymes needs JavaScript to turn the pages. The songs themselves are still yours to sing.</noscript>
   <script src="js/rhymes.js"></script>
+  <script src="js/whole.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

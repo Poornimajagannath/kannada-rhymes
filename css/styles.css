@@ -690,6 +690,41 @@ h1.eyebrow { font-size: 12px; }
 .pick-copy .mean { margin-top: 2px; }
 .pick-now { margin-top: 6px; }
 
+.whole-kicker { margin-top: 12px; }
+.whole-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.whole-line {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.whole-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.whole-copy { min-width: 0; }
+.whole-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 28px;
+  font-weight: 750;
+  letter-spacing: -0.022em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .tab:hover { color: var(--ink); }
   .btn-secondary:hover { background: rgba(106, 78, 57, 0.06); }
@@ -702,7 +737,7 @@ h1.eyebrow { font-size: 12px; }
   .blank:not(.is-filled),
   .blank.is-filled { animation: none !important; }
   .scard { animation-name: fadeOnly; transform: none; }
-  .picker-sheet { animation: fadeOnly 200ms ease; }
+  .picker-sheet, #whole .picker-sheet { animation: fadeOnly 200ms ease; }
   .btn, .clap, .twin, .tab, .audio-btn, .answer-chip, .wchip, .pick {
     transition: opacity 160ms ease, background-color 160ms ease, color 160ms ease;
   }

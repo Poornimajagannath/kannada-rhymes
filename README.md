@@ -1,13 +1,13 @@
 # Samaya’s Kannada Rhymes
 
-A phone page for one Kannada rhyme a week. Amma and Samaya hear it, fill the blank, play with the sounds, and tell the story. The words on the page are English. The song lines are the verified household texts, written in English letters.
+A phone page for one Kannada rhyme a week. Amma and Samaya hear it, fill the blank, play with the sounds, and tell the story. The labels are English. The song is only the verified lines, written in English letters.
 
 Open it at [https://poornimajagannath.github.io/kannada-rhymes/](https://poornimajagannath.github.io/kannada-rhymes/) after it is published from `main`.
 
 ## The four pages
 
-- **Week** — this week’s picture, the Hear / Fill / Play / Lead steps, and Amma’s recording.
-- **Sing** — two lines at a time. Amma’s line, then Samaya’s, with a glowing blank. Tap the blank when you want to show the word. Any try counts.
+- **Week** — this week’s picture, the Hear / Fill / Play / Lead steps, and Amma’s recording. **See whole rhyme** lists every line.
+- **Sing** — two lines at a time. Amma’s line, then Samaya’s, with a glowing blank. Tap the blank when you want to show the word. Any try counts. **See whole rhyme** is here too, when you need the rest of the song.
 - **Words** — clap the chunks of a word, then notice the rhyme twins. It is noticing, not a quiz.
 - **Story** — the picture, the steps in order, and one line for Samaya to say.
 
