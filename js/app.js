@@ -88,21 +88,41 @@
 
   async function findAudio(id) {
     if (Object.prototype.hasOwnProperty.call(audioCache, id)) return audioCache[id];
+    // Try .m4a first, then .mp3. Probe a side URL with a one-byte GET.
+    // iOS Safari will not play an m4a if a HEAD of that same URL is cached with an empty body.
     for (const ext of ["m4a", "mp3"]) {
       const url = new URL(`audio/${id}.${ext}`, document.baseURI).href;
+      const probe = new URL(url);
+      probe.searchParams.set("probe", "1");
       try {
-        const res = await fetch(url, { method: "HEAD" });
+        const res = await fetch(probe.href, {
+          method: "GET",
+          cache: "no-store",
+          headers: { Range: "bytes=0-15" },
+        });
+        if (res.body) res.body.cancel();
         if (res.ok) {
           audioCache[id] = url;
           return url;
         }
       } catch (err) {
-        audioCache[id] = null;
-        return null;
+        /* try the other extension */
       }
     }
     audioCache[id] = null;
     return null;
+  }
+
+  let loadedUrl = "";
+
+  function prime(url) {
+    if (loadedUrl === url) return;
+    const source = document.createElement("source");
+    source.src = url;
+    source.type = url.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg";
+    audio.replaceChildren(source);
+    audio.load();
+    loadedUrl = url;
   }
 
   function stopAudio() {
@@ -406,20 +426,22 @@
 
   async function toggleAudio(origin) {
     const item = rhyme();
-    const url = await findAudio(item.id);
+    const known = knownAudio(item.id);
+    // Call play() in this tap when the file is already known. iOS drops the gesture if play() waits on the probe.
+    const url = known !== undefined ? known : await findAudio(item.id);
     if (!url) {
       showMissing();
       return;
     }
     const spec = origin === "sing" ? item.audioChunks && item.audioChunks[state.chunk] : null;
-    const same = state.playing && state.origin === origin && audio.src === url;
+    const same = state.playing && state.origin === origin && loadedUrl === url;
     if (same) {
       stopAudio();
       render();
       return;
     }
     stopAudio();
-    if (audio.src !== url) audio.src = url;
+    prime(url);
     if (spec) {
       const start = Number(spec.start) || 0;
       tickOn = true;
