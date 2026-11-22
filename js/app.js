@@ -202,7 +202,7 @@
       <p class="unrec-note" id="missingNote"${gone ? "" : " hidden"}>${MISSING}</p>
       <button class="btn btn-secondary" type="button" data-tab="sing">Let’s sing</button>
       <div class="more">
-        <div class="more-head"><p class="more-label">More rhymes</p><button class="chip-btn" type="button" data-picker>All 6</button></div>
+        <div class="more-head"><p class="more-label">More rhymes</p><button class="chip-btn" type="button" data-picker>All 7</button></div>
         <div class="more-row">${row}</div>
       </div>
     </section>`;

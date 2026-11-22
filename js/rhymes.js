@@ -449,5 +449,93 @@
         answerMean: "Her line, every time.",
       },
     },
+    {
+      id: "achchachchu-belladachchu",
+      short: "Achchachchu",
+      title: "Achchachchu Belladachchu",
+      english: "",
+      theme: "aane",
+      image: "images/achchachchu-belladachchu.jpg",
+      alt: "A sampangi tree with black crows, and a small farmer by a paddy field",
+      gesture: "Point up at the tree, then answer each Yaava.",
+      storyNote: "Four steps in this picture",
+      chunks: [
+        [
+          line("together", "Achchachchu belladachchu", [t("Achchachchu "), b("belladachchu")]),
+          line("amma", "Alli nodu illi nodu", "Alli nodu illi nodu"),
+        ],
+        [
+          line("amma", "Sampangi maradali gumpu nodu", "Sampangi maradali gumpu nodu"),
+          line("samaya", "Yaava gumpu? Kaage gumpu", [t("Yaava gumpu? "), b("Kaage gumpu")]),
+        ],
+        [
+          line("samaya", "Yaava kaage? Kappu kaage", [t("Yaava kaage? "), b("Kappu kaage")]),
+          line("samaya", "Yaava kappu? Madike kappu", [t("Yaava kappu? "), b("Madike kappu")]),
+        ],
+        [
+          line("samaya", "Yaava madike? Annada madike", [t("Yaava madike? "), b("Annada madike")]),
+          line("samaya", "Yaava anna? Bhattada anna", [t("Yaava anna? "), b("Bhattada anna")]),
+        ],
+        [
+          line("samaya", "Yaava bhatta? Holada bhatta", [t("Yaava bhatta? "), b("Holada bhatta")]),
+          line("samaya", "Yaava hola? Raitana hola", [t("Yaava hola? "), b("Raitana hola")]),
+        ],
+        [
+          line("samaya", "Yaava raita? Namma annadaata", [t("Yaava raita? "), b("Namma annadaata")]),
+        ],
+      ],
+      claps: [
+        { say: "Achchachchu", pieces: ["Ach", "cha", "chchu"], mean: "Achchachchu" },
+        { say: "Sampangi", pieces: ["Sam", "pan", "gi"], mean: "Sampangi" },
+        { say: "Kaage", pieces: ["Kaa", "ge"], mean: "Kaage" },
+        { say: "Kappu", pieces: ["Kap", "pu"], mean: "Kappu" },
+        { say: "Raita", pieces: ["Rai", "ta"], mean: "Raita" },
+      ],
+      defaultClap: 2,
+      families: [
+        {
+          words: [
+            { w: "Yaava gumpu?", mean: "Yaava gumpu?" },
+            { w: "Kaage gumpu", mean: "Kaage gumpu" },
+          ],
+        },
+        {
+          title: "More twins",
+          note: "they sound the same at the end",
+          words: [
+            { w: "Yaava kaage?", mean: "Yaava kaage?" },
+            { w: "Kappu kaage", mean: "Kappu kaage" },
+          ],
+        },
+        {
+          title: "And these",
+          note: "they sound the same at the end",
+          words: [
+            { w: "Yaava kappu?", mean: "Yaava kappu?" },
+            { w: "Madike kappu", mean: "Madike kappu" },
+            { w: "Yaava madike?", mean: "Yaava madike?" },
+            { w: "Annada madike", mean: "Annada madike" },
+            { w: "Yaava anna?", mean: "Yaava anna?" },
+            { w: "Bhattada anna", mean: "Bhattada anna" },
+            { w: "Yaava bhatta?", mean: "Yaava bhatta?" },
+            { w: "Holada bhatta", mean: "Holada bhatta" },
+            { w: "Yaava hola?", mean: "Yaava hola?" },
+            { w: "Raitana hola", mean: "Raitana hola" },
+          ],
+        },
+      ],
+      steps: [
+        { w: "Belladachchu", mean: "Belladachchu" },
+        { w: "Gumpu nodu", mean: "Gumpu nodu" },
+        { w: "Kappu kaage", mean: "Kappu kaage" },
+        { w: "Namma annadaata", mean: "Namma annadaata" },
+      ],
+      speak: {
+        prompt: "Yaava kaage?",
+        promptMean: "Yaava kaage?",
+        answer: "Kappu kaage",
+        answerMean: "Kappu kaage",
+      },
+    },
   ];
 })();
