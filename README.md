@@ -11,7 +11,7 @@ Open it at [https://poornimajagannath.github.io/kannada-rhymes/](https://poornim
 - **Words** — clap the chunks of a word, then notice the rhyme twins. It is noticing, not a quiz.
 - **Story** — the picture, the steps in order, and one line for Samaya to say.
 
-The bottom bar switches pages. **All 6** opens every rhyme. The rhyme you pick, and the week step you tap, stay on this phone.
+The bottom bar switches pages. **All 7** opens every rhyme. The rhyme you pick, and the week step you tap, stay on this phone.
 
 ## Add Amma’s recording
 
@@ -25,6 +25,7 @@ Record the song, then drop the file into the `audio/` folder. Name it with the r
 | Karadi Bettakke Hoyitu | `audio/karadi-bettakke-hoyithu.m4a` |
 | Chandamama Odi Baa | `audio/chandamama-odi-baa.m4a` |
 | Tarakka Bindige | `audio/tarakka-bindige.m4a` |
+| Achchachchu Belladachchu | `audio/achchachchu-belladachchu.m4a` |
 
 Until that file is there, the page says “Amma hasn’t recorded this one yet.” Everything else still works. Commit the file and push to `main` so the published page can play it.
 

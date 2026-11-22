@@ -301,6 +301,59 @@ window.WHOLE = [
       "On every “Taare bindigeya”, Samaya places a small cup in Amma’s hands and says the refrain herself.",
       "Walk to the ghat, dip the pot, then Samaya pours a pretend abhisheka and can say “ViTThala” or “Govinda”."
     ]
+  },
+  {
+    "id": "achchachchu-belladachchu",
+    "lines": [
+      {
+        "text": "Achchachchu belladachchu",
+        "mean": "Achchachchu belladachchu"
+      },
+      {
+        "text": "Alli nodu illi nodu",
+        "mean": "Alli nodu illi nodu"
+      },
+      {
+        "text": "Sampangi maradali gumpu nodu",
+        "mean": "Sampangi maradali gumpu nodu"
+      },
+      {
+        "text": "Yaava gumpu? Kaage gumpu",
+        "mean": "Yaava gumpu? Kaage gumpu"
+      },
+      {
+        "text": "Yaava kaage? Kappu kaage",
+        "mean": "Yaava kaage? Kappu kaage"
+      },
+      {
+        "text": "Yaava kappu? Madike kappu",
+        "mean": "Yaava kappu? Madike kappu"
+      },
+      {
+        "text": "Yaava madike? Annada madike",
+        "mean": "Yaava madike? Annada madike"
+      },
+      {
+        "text": "Yaava anna? Bhattada anna",
+        "mean": "Yaava anna? Bhattada anna"
+      },
+      {
+        "text": "Yaava bhatta? Holada bhatta",
+        "mean": "Yaava bhatta? Holada bhatta"
+      },
+      {
+        "text": "Yaava hola? Raitana hola",
+        "mean": "Yaava hola? Raitana hola"
+      },
+      {
+        "text": "Yaava raita? Namma annadaata",
+        "mean": "Yaava raita? Namma annadaata"
+      }
+    ],
+    "cues": [
+      "On “Achchachchu belladachchu”, clap the word. Point around on “Alli nodu illi nodu”, then up at the tree on “gumpu nodu”.",
+      "Amma asks each “Yaava” line and waits. Samaya says the answer, and ends with “Namma annadaata”."
+    ]
   }
 ]
 ;

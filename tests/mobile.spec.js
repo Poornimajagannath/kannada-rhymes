@@ -79,6 +79,19 @@ const LYRICS = {
     "Purandara ViTThalage abhisheka maaduve",
     "Taare bindigeya",
   ],
+  "achchachchu-belladachchu": [
+    "Achchachchu belladachchu",
+    "Alli nodu illi nodu",
+    "Sampangi maradali gumpu nodu",
+    "Yaava gumpu? Kaage gumpu",
+    "Yaava kaage? Kappu kaage",
+    "Yaava kappu? Madike kappu",
+    "Yaava madike? Annada madike",
+    "Yaava anna? Bhattada anna",
+    "Yaava bhatta? Holada bhatta",
+    "Yaava hola? Raitana hola",
+    "Yaava raita? Namma annadaata",
+  ],
 };
 
 function trackErrors(page) {
@@ -140,6 +153,7 @@ async function expectLayout(page) {
       if (drawnW > box.width + 1 || drawnH > box.height + 1) problems.push("image draws outside its box");
     }
     if (/[\u0C80-\u0CFF]/.test(document.body.innerText)) problems.push("Kannada script is on the page");
+    if (/[\u0900-\u097F]/.test(document.body.innerText)) problems.push("Devanagari script is on the page");
     for (const badge of document.querySelectorAll(".more-item .badge")) {
       const thumb = badge.closest(".thumb");
       if (!thumb) {
@@ -189,7 +203,7 @@ test("every rhyme, every screen, stays on the phone", async ({ page }) => {
     for (const tab of ["Week", "Sing", "Words", "Story"]) {
       await page.getByRole("tab", { name: tab }).click();
       await expect(page.locator(`[data-view="${tab.toLowerCase()}"]`)).toBeVisible();
-      await expect(page.getByText(englishTitle, { exact: true })).toHaveCount(0);
+      if (englishTitle) await expect(page.getByText(englishTitle, { exact: true })).toHaveCount(0);
       await expectLayout(page);
     }
   }
@@ -214,10 +228,10 @@ test("every rhyme, every screen, stays on the phone", async ({ page }) => {
   await expect(page.getByRole("radio", { name: "Lead" })).toHaveAttribute("aria-checked", "true");
   await page.reload();
   await expect(page.getByRole("radio", { name: "Lead" })).toHaveAttribute("aria-checked", "true");
-  await page.getByRole("button", { name: "All 6" }).click();
+  await page.getByRole("button", { name: "All 7" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator(".pick")).toHaveCount(6);
+  await expect(dialog.locator(".pick")).toHaveCount(7);
   await expectLayout(page);
   expect(errors, errors.join("\n")).toEqual([]);
 });
@@ -396,10 +410,14 @@ test("whole rhyme lists every verified line", async ({ page }) => {
       expect(Math.min(...sizes)).toBeGreaterThanOrEqual(18);
       const sheet = await dialog.innerText();
       expect(sheet).not.toMatch(/[\u0C80-\u0CFF]/);
+      expect(sheet).not.toMatch(/[\u0900-\u097F]/);
       for (const line of pack.lines) {
-        expect(sheet).not.toContain(line.mean);
+        if (line.mean && line.mean !== line.text) expect(sheet, pack.id).not.toContain(line.mean);
       }
-      await expect(page.getByText(pack.lines[0].mean, { exact: true })).toHaveCount(0);
+      const gloss = pack.lines[0].mean;
+      if (gloss && gloss !== pack.lines[0].text) {
+        await expect(page.getByText(gloss, { exact: true })).toHaveCount(0);
+      }
       await expectLayout(page);
       await dialog.getByRole("button", { name: "Close" }).click();
       await expect(dialog).toBeHidden();
@@ -421,7 +439,7 @@ test("iphone 14 screenshots", async ({ page }, testInfo) => {
   await page.screenshot({ path: `${dir}/iphone14-sing.png`, fullPage: false });
 
   await page.getByRole("tab", { name: "Week" }).click();
-  await page.getByRole("button", { name: "All 6" }).click();
+  await page.getByRole("button", { name: "All 7" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await settle(page);
   await page.screenshot({ path: `${dir}/iphone14-picker.png`, fullPage: false });
@@ -446,7 +464,7 @@ test("iphone 14 screenshots", async ({ page }, testInfo) => {
   await page.screenshot({ path: `${dir}/iphone14-whole-aane.png`, fullPage: false });
   await aaneSheet.getByRole("button", { name: "Close", exact: true }).click();
 
-  await page.getByRole("button", { name: "All 6" }).click();
+  await page.getByRole("button", { name: "All 7" }).click();
   await page.getByRole("dialog").getByRole("button", { name: /Nayimari Nayimari/ }).click();
   await page.getByRole("button", { name: "See whole rhyme" }).click();
   const ziggySheet = page.getByRole("dialog", { name: "Whole rhyme" });
@@ -455,4 +473,126 @@ test("iphone 14 screenshots", async ({ page }, testInfo) => {
     await Promise.all(el.getAnimations({ subtree: true }).map((anim) => anim.finished));
   });
   await page.screenshot({ path: `${dir}/iphone14-whole-nayimari.png`, fullPage: false });
+});
+
+function glossesStayTransliterated(value, lyrics, path) {
+  if (!value || typeof value !== "object") return;
+  const blob = lyrics.join("\n").toLowerCase();
+  for (const [key, child] of Object.entries(value)) {
+    if (typeof child === "string" && /mean/i.test(key) && child) {
+      expect(blob, `${path}.${key} = ${child}`).toContain(child.toLowerCase());
+    } else if (child && typeof child === "object") {
+      glossesStayTransliterated(child, lyrics, `${path}.${key}`);
+    }
+  }
+}
+
+test("Achchachchu Belladachchu is transliteration only and has no recording", async ({ page }, testInfo) => {
+  test.setTimeout(60_000);
+  const id = "achchachchu-belladachchu";
+  const lyrics = LYRICS[id];
+  expect(fs.existsSync(new URL("../audio/achchachchu-belladachchu.m4a", import.meta.url))).toBe(false);
+  expect(fs.existsSync(new URL("../audio/achchachchu-belladachchu.mp3", import.meta.url))).toBe(false);
+  for (const source of ["js/rhymes.js", "js/whole.js", "js/app.js", "data/whole-rhymes.json", "index.html"]) {
+    const text = fs.readFileSync(new URL(`../${source}`, import.meta.url), "utf8");
+    expect(text, source).not.toMatch(/[\u0C80-\u0CFF]/);
+    expect(text, source).not.toMatch(/[\u0900-\u097F]/);
+  }
+
+  const pack = JSON.parse(fs.readFileSync(new URL("../data/whole-rhymes.json", import.meta.url), "utf8"))
+    .find((item) => item.id === id);
+  expect(pack.lines.map((line) => line.text)).toEqual(lyrics);
+  for (const line of pack.lines) expect(line.mean).toBe(line.text);
+
+  const errors = trackErrors(page);
+  await page.goto("/");
+  await page.evaluate((rhymeId) => {
+    localStorage.setItem("samaya-kannada-rhymes", JSON.stringify({ rhymeId, step: "hear" }));
+  }, id);
+  await page.reload();
+
+  await expect(page.getByRole("heading", { name: "Achchachchu Belladachchu" })).toBeVisible();
+  await expect(page.getByText(MISSING)).toBeVisible();
+  await expect(page.locator("#voiceBtn")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator("#voiceBtn")).not.toHaveClass(/is-playing/);
+  await expect(page.locator("iframe, a[href*='youtube']")).toHaveCount(0);
+  const rhyme = await page.evaluate((rhymeId) => window.RHYMES.find((item) => item.id === rhymeId), id);
+  expect(rhyme.english || "").toBe("");
+  glossesStayTransliterated(rhyme, lyrics, id);
+  await page.getByRole("button", { name: "Play Amma’s voice" }).click();
+  await expect(page.getByRole("button", { name: "Play Amma’s voice" })).toBeVisible();
+  await expect(page.locator("#voiceBtn")).not.toHaveClass(/is-playing/);
+  await expect(page.getByText(MISSING)).toBeVisible();
+  const achPaint = await page.locator("#voiceBtn").evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { background: style.backgroundColor, opacity: style.opacity };
+  });
+  await expectLayout(page);
+  if (testInfo.project.name === "iphone-14") {
+    await page.screenshot({ path: "/opt/cursor/artifacts/iphone14-achchachchu-card.png", fullPage: false });
+  }
+
+  await page.getByRole("tab", { name: "Sing" }).click();
+  await expect(page.locator("#chunkStatus")).toHaveText(MISSING);
+  await page.getByRole("button", { name: "Next lines" }).click();
+  await page.getByRole("button", { name: "Next lines" }).click();
+  await expect(page.getByText("Part 3 of 6")).toBeVisible();
+  await expect(page.getByText("Yaava kaage?", { exact: true })).toBeVisible();
+  const blank = page.locator(".blank").first();
+  await blank.click({ force: true });
+  await expect(blank).toHaveText("Kappu kaage");
+  const singText = await page.locator('[data-view="sing"]').innerText();
+  expect(singText).not.toMatch(/[\u0C80-\u0CFF\u0900-\u097F]/);
+  expect(singText).not.toMatch(/\b(crow|crows|farmer|paddy|which)\b/i);
+
+  await page.getByRole("tab", { name: "Words" }).click();
+  await expect(page.getByRole("button", { name: "Yaava kaage?", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Kappu kaage", exact: true })).toBeVisible();
+  const wordsText = await page.locator('[data-view="words"]').innerText();
+  expect(wordsText).not.toMatch(/[\u0C80-\u0CFF\u0900-\u097F]/);
+  expect(wordsText).not.toMatch(/\b(crow|crows|farmer|paddy|which|black|rice)\b/i);
+  await expectLayout(page);
+
+  await page.getByRole("tab", { name: "Story" }).click();
+  await expect(page.locator(".speak-q")).toHaveText("Yaava kaage?");
+  await expect(page.locator(".answer-chip")).toHaveText("Kappu kaage");
+  const storyText = await page.locator('[data-view="story"]').innerText();
+  expect(storyText).not.toMatch(/[\u0C80-\u0CFF\u0900-\u097F]/);
+  expect(storyText).not.toMatch(/\b(crow|crows|farmer|paddy|which|black|rice)\b/i);
+
+  await page.getByRole("tab", { name: "Week" }).click();
+  await page.getByRole("button", { name: "See whole rhyme" }).click();
+  const sheet = page.getByRole("dialog", { name: "Whole rhyme" });
+  await expect(sheet).toBeVisible();
+  await sheet.evaluate(async (el) => {
+    await Promise.all(el.getAnimations({ subtree: true }).map((anim) => anim.finished));
+  });
+  const rows = sheet.locator("[data-whole-line]");
+  await expect(rows).toHaveCount(lyrics.length);
+  const texts = (await rows.locator(".whole-text").allTextContents()).map((text) => text.trim());
+  expect(texts).toEqual(lyrics);
+  const sheetText = await sheet.innerText();
+  expect(sheetText).not.toMatch(/[\u0C80-\u0CFF\u0900-\u097F]/);
+  expect(sheetText).not.toMatch(/\b(crow|crows|farmer|paddy|which|black|rice)\b/i);
+  expect(sheetText).not.toContain("clap the word");
+  await expectLayout(page);
+  if (testInfo.project.name === "iphone-14") {
+    await page.screenshot({ path: "/opt/cursor/artifacts/iphone14-achchachchu-whole.png", fullPage: false });
+  }
+  await sheet.getByRole("button", { name: "Close", exact: true }).click();
+
+  await page.getByRole("button", { name: "Karadi", exact: true }).click();
+  await expect(page.getByText(MISSING)).toBeVisible();
+  const nayiPaint = await page.locator("#voiceBtn").evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { background: style.backgroundColor, opacity: style.opacity };
+  });
+  expect(achPaint).toEqual(nayiPaint);
+
+  await page.getByRole("button", { name: "Aane", exact: true }).click();
+  await expect(page.locator("#missingNote")).toBeHidden();
+  const mark = page.locator(".more-item", { hasText: "Achchachchu" });
+  await expect(mark.locator(".badge.unrec")).toBeVisible();
+  await expect(mark.locator(".badge.play")).toHaveCount(0);
+  expect(errors, errors.join("\n")).toEqual([]);
 });
