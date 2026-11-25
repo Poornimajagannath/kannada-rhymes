@@ -197,7 +197,8 @@ test("every rhyme, every screen, stays on the phone", async ({ page }) => {
       localStorage.setItem("samaya-kannada-rhymes", JSON.stringify({ rhymeId, step: "hear" }));
     }, id);
     await page.reload();
-    if (id === "aane-banthondu-aane") await expect(page.locator("#missingNote")).toBeHidden();
+    const recorded = id === "aane-banthondu-aane" || id === "ondu-eradu-baalele-haradu";
+    if (recorded) await expect(page.locator("#missingNote")).toBeHidden();
     else await expect(page.getByText(MISSING).first()).toBeVisible();
     const englishTitle = await page.evaluate((rhymeId) => window.RHYMES.find((item) => item.id === rhymeId).english, id);
     for (const tab of ["Week", "Sing", "Words", "Story"]) {
@@ -321,8 +322,8 @@ test("Aane Banthondu Aane recording loads and plays", async ({}, testInfo) => {
       duration: window.__rhymesAudio.duration,
     }));
     expect(playing.time).toBeGreaterThan(0);
-    expect(playing.duration).toBeGreaterThan(26);
-    expect(playing.duration).toBeLessThan(28);
+    expect(playing.duration).toBeGreaterThan(34);
+    expect(playing.duration).toBeLessThan(36);
     await page.screenshot({ path: "/opt/cursor/artifacts/aane-play-button-on.png" });
 
     await page.getByRole("button", { name: "See whole rhyme" }).click();
@@ -350,6 +351,106 @@ test("Aane Banthondu Aane recording loads and plays", async ({}, testInfo) => {
     await expect.poll(() => page.evaluate(() => {
       const audio = window.__rhymesAudio;
       return !!(audio && !audio.paused && audio.currentSrc.includes("aane-banthondu-aane.m4a") && audio.currentTime > 0);
+    })).toBe(true);
+
+    await page.getByRole("tab", { name: "Words" }).click();
+    await expect(page.locator("[data-audio]")).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => window.__rhymesAudio.paused)).toBe(true);
+  } finally {
+    await browser.close();
+  }
+});
+
+test("Ondu Eradu BaaleLe Haradu recording loads and plays", async ({}, testInfo) => {
+  test.skip(testInfo.project.name !== "iphone-14", "one phone is enough for audio");
+  test.setTimeout(45_000);
+  const file = fs.readFileSync(new URL("../audio/ondu-eradu-baalele-haradu.m4a", import.meta.url));
+  const atoms = topLevelAtoms(file);
+  expect(atoms[0]).toBe("ftyp");
+  expect(atoms.indexOf("moov")).toBeGreaterThan(-1);
+  expect(atoms.indexOf("moov")).toBeLessThan(atoms.indexOf("mdat"));
+
+  const browser = await chromium.launch({ channel: "chrome" });
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    hasTouch: true,
+    isMobile: true,
+    baseURL: "http://127.0.0.1:4173",
+  });
+  const page = await context.newPage();
+  try {
+    await page.addInitScript(() => {
+      const play = HTMLAudioElement.prototype.play;
+      HTMLAudioElement.prototype.play = function () {
+        window.__rhymesAudio = this;
+        return play.call(this);
+      };
+    });
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "BaaleLe", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Ondu Eradu BaaleLe Haradu" })).toBeVisible();
+    await expect(page.locator("#missingNote")).toBeHidden();
+
+    const mediaResponse = page.waitForResponse((res) => (
+      res.request().resourceType() === "media" && res.url().includes("ondu-eradu-baalele-haradu.m4a")
+    ));
+    await page.getByRole("button", { name: "Play Amma’s voice" }).click();
+    const media = await mediaResponse;
+    expect(media.ok(), `${media.status()} ${media.headers()["content-type"]}`).toBe(true);
+    expect(media.headers()["content-type"] || "").toMatch(/audio\/mp4/i);
+    await expect(page.getByRole("button", { name: "Pause Amma’s voice" })).toBeVisible();
+    await expect(page.locator("#voiceBtn")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("#voiceBtn")).toHaveClass(/is-playing/);
+    await expect.poll(() => page.evaluate(() => {
+      const audio = window.__rhymesAudio;
+      if (!audio || audio.paused) return null;
+      const source = audio.querySelector("source");
+      return {
+        src: audio.currentSrc,
+        type: source ? source.type : "",
+        time: audio.currentTime,
+        duration: audio.duration,
+      };
+    })).toMatchObject({
+      src: expect.stringContaining("ondu-eradu-baalele-haradu.m4a"),
+      type: "audio/mp4",
+    });
+    const playing = await page.evaluate(() => ({
+      time: window.__rhymesAudio.currentTime,
+      duration: window.__rhymesAudio.duration,
+    }));
+    expect(playing.time).toBeGreaterThan(0);
+    expect(playing.duration).toBeGreaterThan(36);
+    expect(playing.duration).toBeLessThan(38);
+    await page.screenshot({ path: "/opt/cursor/artifacts/ondu-play-button-on.png" });
+
+    await page.getByRole("button", { name: "See whole rhyme" }).click();
+    const sheet = page.getByRole("dialog", { name: "Whole rhyme" });
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText("Ondu eradu baaleLe haradu", { exact: true })).toBeVisible();
+    const before = await page.evaluate(() => window.__rhymesAudio.currentTime);
+    await page.waitForTimeout(400);
+    const duringSheet = await page.evaluate(() => ({
+      time: window.__rhymesAudio.currentTime,
+      paused: window.__rhymesAudio.paused,
+      src: window.__rhymesAudio.currentSrc,
+    }));
+    expect(duringSheet.paused).toBe(false);
+    expect(duringSheet.time).toBeGreaterThan(before);
+    expect(duringSheet.src).toContain("ondu-eradu-baalele-haradu.m4a");
+    await sheet.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByRole("button", { name: "Pause Amma’s voice" })).toBeVisible();
+
+    await page.getByRole("tab", { name: "Sing" }).click();
+    await expect(page.locator("#chunkStatus")).toHaveText("Play the whole song");
+    await page.locator("#chunkBtn").click();
+    await expect(page.locator("#chunkBtn")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("#chunkStatus")).toHaveText("Playing the whole song");
+    await expect.poll(() => page.evaluate(() => {
+      const audio = window.__rhymesAudio;
+      return !!(audio && !audio.paused && audio.currentSrc.includes("ondu-eradu-baalele-haradu.m4a") && audio.currentTime > 0);
     })).toBe(true);
 
     await page.getByRole("tab", { name: "Words" }).click();
