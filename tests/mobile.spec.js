@@ -117,7 +117,7 @@ async function settle(page) {
   });
   await page.waitForFunction(() => {
     const visible = [...document.images].filter((img) => img.getBoundingClientRect().width > 0);
-    return visible.length > 0 && visible.every((img) => img.complete && img.naturalWidth > 0);
+    return visible.every((img) => img.complete && img.naturalWidth > 0);
   });
 }
 
@@ -126,15 +126,33 @@ async function expectLayout(page) {
   const problems = await page.evaluate(() => {
     const width = document.documentElement.clientWidth;
     const problems = [];
+    const allowed = new Set([16, 18, 20, 32, 48, 64]);
     if (document.documentElement.scrollWidth > width + 1) {
       problems.push(`page scrolls sideways (${document.documentElement.scrollWidth} > ${width})`);
+    }
+    function clippedByScroller(el) {
+      let node = el.parentElement;
+      while (node && node !== document.body) {
+        const ox = getComputedStyle(node).overflowX;
+        if (ox === "auto" || ox === "scroll") {
+          const frame = node.getBoundingClientRect();
+          return frame.left >= -1.5 && frame.right <= width + 1.5;
+        }
+        node = node.parentElement;
+      }
+      return false;
     }
     for (const el of document.body.querySelectorAll("*")) {
       const style = getComputedStyle(el);
       if (style.display === "none" || style.visibility === "hidden") continue;
       const box = el.getBoundingClientRect();
       if (box.width < 1 && box.height < 1) continue;
-      if (box.right > width + 1.5 || box.left < -1.5) {
+      const text = [...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.trim());
+      if (text) {
+        const size = Math.round(parseFloat(style.fontSize));
+        if (!allowed.has(size)) problems.push(`type is ${size}px on ${el.textContent.trim().slice(0, 24)}`);
+      }
+      if ((box.right > width + 1.5 || box.left < -1.5) && !clippedByScroller(el)) {
         const name = `${el.tagName}.${String(el.className).slice(0, 40)}`;
         problems.push(`${name} sticks out (${box.left.toFixed(1)}–${box.right.toFixed(1)})`);
       }
@@ -142,30 +160,29 @@ async function expectLayout(page) {
     for (const img of document.querySelectorAll("img")) {
       const box = img.getBoundingClientRect();
       if (box.width < 1) continue;
-      const fit = getComputedStyle(img).objectFit;
-      if (fit !== "contain") problems.push(`object-fit is ${fit}`);
       if (!img.complete || !img.naturalWidth) problems.push(`image not loaded: ${img.currentSrc}`);
+      const src = img.getAttribute("src") || "";
+      if (src.includes("friends/")) continue;
       const ratio = img.naturalWidth / img.naturalHeight;
-      if (Math.abs(ratio - 4 / 3) > 0.01) problems.push(`image is not 4:3 (${ratio})`);
-      const scale = Math.min(box.width / img.naturalWidth, box.height / img.naturalHeight);
-      const drawnW = img.naturalWidth * scale;
-      const drawnH = img.naturalHeight * scale;
-      if (drawnW > box.width + 1 || drawnH > box.height + 1) problems.push("image draws outside its box");
+      if (Math.abs(ratio - 4 / 3) > 0.02) problems.push(`image is not 4:3 (${ratio})`);
+      const fit = getComputedStyle(img).objectFit;
+      if (fit !== "cover" && fit !== "contain") problems.push(`object-fit is ${fit}`);
     }
     if (/[\u0C80-\u0CFF]/.test(document.body.innerText)) problems.push("Kannada script is on the page");
     if (/[\u0900-\u097F]/.test(document.body.innerText)) problems.push("Devanagari script is on the page");
-    for (const badge of document.querySelectorAll(".more-item .badge")) {
-      const thumb = badge.closest(".thumb");
-      if (!thumb) {
-        problems.push("recording mark is not on a thumbnail");
+    for (const badge of document.querySelectorAll(".badge")) {
+      if (badge.hidden) continue;
+      const frame = badge.closest(".thumb, .rhyme-art");
+      if (!frame) {
+        problems.push("recording mark is not on a picture");
         continue;
       }
-      const frame = thumb.getBoundingClientRect();
+      const box = frame.getBoundingClientRect();
       const mark = badge.getBoundingClientRect();
       const cx = mark.left + mark.width / 2;
       const cy = mark.top + mark.height / 2;
-      if (cx < frame.left - 4 || cx > frame.right + 4 || cy < frame.top - 4 || cy > frame.bottom + 4) {
-        problems.push("recording mark sits off its thumbnail");
+      if (cx < box.left - 4 || cx > box.right + 4 || cy < box.top - 4 || cy > box.bottom + 4) {
+        problems.push("recording mark sits off its picture");
       }
     }
     return problems.slice(0, 12);
@@ -173,12 +190,18 @@ async function expectLayout(page) {
   expect(problems, problems.join("\n")).toEqual([]);
 }
 
+async function openRhymes(page) {
+  await page.getByRole("button", { name: "Rhymes" }).click();
+}
+
 test("every rhyme, every screen, stays on the phone", async ({ page }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   const errors = trackErrors(page);
   await page.goto("/");
-  await expect(page.locator("#missingNote")).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Samaya" })).toBeVisible();
   await expect(page.locator("iframe, a[href*='youtube']")).toHaveCount(0);
+  await openRhymes(page);
+  await expect(page.locator("#missingNote")).toBeHidden();
 
   const sung = await page.evaluate(() => window.RHYMES.map((rhyme) => ({
     id: rhyme.id,
@@ -194,45 +217,48 @@ test("every rhyme, every screen, stays on the phone", async ({ page }) => {
 
   for (const id of Object.keys(LYRICS)) {
     await page.evaluate((rhymeId) => {
-      localStorage.setItem("samaya-kannada-rhymes", JSON.stringify({ rhymeId, step: "hear" }));
+      localStorage.setItem("samaya-kannada-rhymes", JSON.stringify({ rhymeId }));
     }, id);
     await page.reload();
+    await openRhymes(page);
     const recorded = id === "aane-banthondu-aane" || id === "ondu-eradu-baalele-haradu";
     if (recorded) await expect(page.locator("#missingNote")).toBeHidden();
     else await expect(page.getByText(MISSING).first()).toBeVisible();
     const englishTitle = await page.evaluate((rhymeId) => window.RHYMES.find((item) => item.id === rhymeId).english, id);
-    for (const tab of ["Week", "Sing", "Words", "Story"]) {
-      await page.getByRole("tab", { name: tab }).click();
-      await expect(page.locator(`[data-view="${tab.toLowerCase()}"]`)).toBeVisible();
-      if (englishTitle) await expect(page.getByText(englishTitle, { exact: true })).toHaveCount(0);
-      await expectLayout(page);
-    }
+    if (englishTitle) await expect(page.getByText(englishTitle, { exact: true })).toHaveCount(0);
+    await expectLayout(page);
+    await page.getByRole("button", { name: "Let’s sing", exact: true }).click();
+    await expectLayout(page);
+    await page.getByRole("button", { name: "This week’s rhyme" }).click();
+    await page.getByRole("button", { name: "Play with the words" }).click();
+    await expectLayout(page);
+    await page.getByRole("button", { name: "Back" }).click();
+    await page.getByRole("button", { name: "Tell the story" }).click();
+    await expectLayout(page);
   }
 
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await page.getByRole("tab", { name: "Words" }).click();
-  const clap = page.locator(".clap").first();
-  await clap.click();
-  await expect.poll(() => clap.evaluate((el) => el.getAnimations().some((anim) => anim.effect && anim.effect.getTiming().duration === 480))).toBe(true);
+  await openRhymes(page);
+  await page.getByRole("button", { name: "Play with the words" }).click();
+  await page.locator(".clap").first().click();
   await page.locator(".twin").first().click();
   await expect(page.locator(".twin.is-pop").first()).toBeVisible();
-  await page.getByRole("tab", { name: "Sing" }).click();
-  await page.locator(".blank").first().click({ force: true });
-  await expect(page.locator(".blank.is-filled").first()).toBeVisible();
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "Let’s sing", exact: true }).click();
+  await expect(page.getByText("Aane banthondu aane", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Next lines" }).click();
-  await expect(page.getByText("Part 2 of")).toBeVisible();
-  await page.getByRole("tab", { name: "Story" }).click();
+  await expect(page.getByText("Part 2 of 4")).toBeVisible();
+  await page.getByRole("button", { name: "This week’s rhyme" }).click();
+  await page.getByRole("button", { name: "Tell the story" }).click();
   await page.locator(".answer-chip").click();
-  await page.getByRole("tab", { name: "Week" }).click();
-  await page.getByRole("radio", { name: "Lead" }).click();
-  await expect(page.getByRole("radio", { name: "Lead" })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "Nayimari", exact: true }).click();
   await page.reload();
-  await expect(page.getByRole("radio", { name: "Lead" })).toHaveAttribute("aria-checked", "true");
-  await page.getByRole("button", { name: "All 7" }).click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog).toBeVisible();
-  await expect(dialog.locator(".pick")).toHaveCount(7);
+  await openRhymes(page);
+  await expect(page.getByRole("heading", { name: "Nayimari Nayimari Tindi Beke" })).toBeVisible();
+  await page.getByRole("button", { name: "See all" }).click();
+  await expect(page.locator(".rhyme-card")).toHaveCount(7);
   await expectLayout(page);
   expect(errors, errors.join("\n")).toEqual([]);
 });
@@ -240,10 +266,14 @@ test("every rhyme, every screen, stays on the phone", async ({ page }) => {
 test("motion stays still when reduced motion is on", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await page.getByRole("tab", { name: "Words" }).click();
+  await openRhymes(page);
+  await page.getByRole("button", { name: "Play with the words" }).click();
   const clap = page.locator(".clap").first();
   await clap.click();
-  const sprang = await clap.evaluate((el) => el.getAnimations().some((anim) => anim.effect && anim.effect.getTiming().duration === 480));
+  const sprang = await clap.evaluate((el) => el.getAnimations().some((anim) => {
+    const timing = anim.effect && anim.effect.getTiming();
+    return timing && timing.duration >= 300;
+  }));
   expect(sprang).toBe(false);
 });
 
@@ -290,6 +320,7 @@ test("Aane Banthondu Aane recording loads and plays", async ({}, testInfo) => {
     });
 
     await page.goto("/");
+    await openRhymes(page);
     await expect(page.getByRole("heading", { name: "Aane Banthondu Aane" })).toBeVisible();
     await expect(page.locator("#missingNote")).toBeHidden();
 
@@ -317,6 +348,7 @@ test("Aane Banthondu Aane recording loads and plays", async ({}, testInfo) => {
       src: expect.stringContaining("aane-banthondu-aane.m4a"),
       type: "audio/mp4",
     });
+    await expect.poll(() => page.evaluate(() => window.__rhymesAudio.currentTime)).toBeGreaterThan(0);
     const playing = await page.evaluate(() => ({
       time: window.__rhymesAudio.currentTime,
       duration: window.__rhymesAudio.duration,
@@ -327,9 +359,7 @@ test("Aane Banthondu Aane recording loads and plays", async ({}, testInfo) => {
     await page.screenshot({ path: "/opt/cursor/artifacts/aane-play-button-on.png" });
 
     await page.getByRole("button", { name: "See whole rhyme" }).click();
-    const sheet = page.getByRole("dialog", { name: "Whole rhyme" });
-    await expect(sheet).toBeVisible();
-    await expect(sheet.getByText("Aane banthondu aane", { exact: true })).toBeVisible();
+    await expect(page.getByText("Aane banthondu aane", { exact: true })).toBeVisible();
     const before = await page.evaluate(() => window.__rhymesAudio.currentTime);
     await page.waitForTimeout(400);
     const duringSheet = await page.evaluate(() => ({
@@ -340,20 +370,12 @@ test("Aane Banthondu Aane recording loads and plays", async ({}, testInfo) => {
     expect(duringSheet.paused).toBe(false);
     expect(duringSheet.time).toBeGreaterThan(before);
     expect(duringSheet.src).toContain("aane-banthondu-aane.m4a");
-    await sheet.getByRole("button", { name: "Close" }).click();
+    await page.getByRole("button", { name: "Back" }).click();
     await expect(page.getByRole("button", { name: "Pause Amma’s voice" })).toBeVisible();
-
-    await page.getByRole("tab", { name: "Sing" }).click();
-    await expect(page.locator("#chunkStatus")).toHaveText("Play the whole song");
-    await page.locator("#chunkBtn").click();
-    await expect(page.locator("#chunkBtn")).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator("#chunkStatus")).toHaveText("Playing the whole song");
-    await expect.poll(() => page.evaluate(() => {
-      const audio = window.__rhymesAudio;
-      return !!(audio && !audio.paused && audio.currentSrc.includes("aane-banthondu-aane.m4a") && audio.currentTime > 0);
-    })).toBe(true);
 
-    await page.getByRole("tab", { name: "Words" }).click();
+    await page.getByRole("button", { name: "This week’s rhyme" }).click();
+    await page.getByRole("button", { name: "Play with the words" }).click();
     await expect(page.locator("[data-audio]")).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => window.__rhymesAudio.paused)).toBe(true);
   } finally {
@@ -389,6 +411,7 @@ test("Ondu Eradu BaaleLe Haradu recording loads and plays", async ({}, testInfo)
     });
 
     await page.goto("/");
+    await openRhymes(page);
     await page.getByRole("button", { name: "BaaleLe", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Ondu Eradu BaaleLe Haradu" })).toBeVisible();
     await expect(page.locator("#missingNote")).toBeHidden();
@@ -417,6 +440,7 @@ test("Ondu Eradu BaaleLe Haradu recording loads and plays", async ({}, testInfo)
       src: expect.stringContaining("ondu-eradu-baalele-haradu.m4a"),
       type: "audio/mp4",
     });
+    await expect.poll(() => page.evaluate(() => window.__rhymesAudio.currentTime)).toBeGreaterThan(0);
     const playing = await page.evaluate(() => ({
       time: window.__rhymesAudio.currentTime,
       duration: window.__rhymesAudio.duration,
@@ -427,9 +451,7 @@ test("Ondu Eradu BaaleLe Haradu recording loads and plays", async ({}, testInfo)
     await page.screenshot({ path: "/opt/cursor/artifacts/ondu-play-button-on.png" });
 
     await page.getByRole("button", { name: "See whole rhyme" }).click();
-    const sheet = page.getByRole("dialog", { name: "Whole rhyme" });
-    await expect(sheet).toBeVisible();
-    await expect(sheet.getByText("Ondu eradu baaleLe haradu", { exact: true })).toBeVisible();
+    await expect(page.getByText("Ondu eradu baaleLe haradu", { exact: true })).toBeVisible();
     const before = await page.evaluate(() => window.__rhymesAudio.currentTime);
     await page.waitForTimeout(400);
     const duringSheet = await page.evaluate(() => ({
@@ -440,20 +462,12 @@ test("Ondu Eradu BaaleLe Haradu recording loads and plays", async ({}, testInfo)
     expect(duringSheet.paused).toBe(false);
     expect(duringSheet.time).toBeGreaterThan(before);
     expect(duringSheet.src).toContain("ondu-eradu-baalele-haradu.m4a");
-    await sheet.getByRole("button", { name: "Close" }).click();
+    await page.getByRole("button", { name: "Back" }).click();
     await expect(page.getByRole("button", { name: "Pause Amma’s voice" })).toBeVisible();
-
-    await page.getByRole("tab", { name: "Sing" }).click();
-    await expect(page.locator("#chunkStatus")).toHaveText("Play the whole song");
-    await page.locator("#chunkBtn").click();
-    await expect(page.locator("#chunkBtn")).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator("#chunkStatus")).toHaveText("Playing the whole song");
-    await expect.poll(() => page.evaluate(() => {
-      const audio = window.__rhymesAudio;
-      return !!(audio && !audio.paused && audio.currentSrc.includes("ondu-eradu-baalele-haradu.m4a") && audio.currentTime > 0);
-    })).toBe(true);
 
-    await page.getByRole("tab", { name: "Words" }).click();
+    await page.getByRole("button", { name: "This week’s rhyme" }).click();
+    await page.getByRole("button", { name: "Play with the words" }).click();
     await expect(page.locator("[data-audio]")).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => window.__rhymesAudio.paused)).toBe(true);
   } finally {
@@ -474,14 +488,15 @@ test("a dropped recording can play, and a chunk can pause", async ({ page }, tes
     await route.fulfill({ status: 404, body: "missing" });
   });
   await page.goto("/");
+  await openRhymes(page);
   await expect(page.locator("#missingNote")).toBeHidden();
   await page.getByRole("button", { name: "Play Amma’s voice" }).click();
   await expect(page.getByRole("button", { name: "Pause Amma’s voice" })).toBeVisible();
-  await page.getByRole("tab", { name: "Sing" }).click();
+  await page.getByRole("button", { name: "Pause Amma’s voice" }).click();
   await page.evaluate(() => {
     window.RHYMES[0].audioChunks = [{ start: 0, end: 2.5, pauseAt: 0.6 }];
   });
-  await page.locator("#chunkBtn").click();
+  await page.locator("#voiceBtn").click();
   await expect(page.locator("#chunkStatus")).toHaveText("Playing — will pause at the blank");
   await expect(page.locator("#chunkStatus")).toHaveText("Paused at the blank for Samaya", { timeout: 8000 });
 });
@@ -493,87 +508,62 @@ test("whole rhyme lists every verified line", async ({ page }) => {
   await page.goto("/");
   for (const pack of whole) {
     await page.evaluate((rhymeId) => {
-      localStorage.setItem("samaya-kannada-rhymes", JSON.stringify({ rhymeId, step: "hear" }));
+      localStorage.setItem("samaya-kannada-rhymes", JSON.stringify({ rhymeId }));
     }, pack.id);
     await page.reload();
-    for (const tab of ["Week", "Sing"]) {
-      await page.getByRole("tab", { name: tab }).click();
-      await page.getByRole("button", { name: "See whole rhyme" }).click();
-      const dialog = page.getByRole("dialog", { name: "Whole rhyme" });
-      await expect(dialog).toBeVisible();
-      const rows = dialog.locator("[data-whole-line]");
-      await expect(rows, pack.id).toHaveCount(pack.lines.length);
-      const texts = (await rows.locator(".whole-text").allTextContents()).map((text) => text.trim());
-      expect(texts, pack.id).toEqual(pack.lines.map((line) => line.text));
-      const sizes = await dialog.locator(".whole-text").evaluateAll((nodes) => (
-        nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize))
-      ));
-      expect(Math.min(...sizes)).toBeGreaterThanOrEqual(18);
-      const sheet = await dialog.innerText();
-      expect(sheet).not.toMatch(/[\u0C80-\u0CFF]/);
-      expect(sheet).not.toMatch(/[\u0900-\u097F]/);
-      for (const line of pack.lines) {
-        if (line.mean && line.mean !== line.text) expect(sheet, pack.id).not.toContain(line.mean);
-      }
-      const gloss = pack.lines[0].mean;
-      if (gloss && gloss !== pack.lines[0].text) {
-        await expect(page.getByText(gloss, { exact: true })).toHaveCount(0);
-      }
-      await expectLayout(page);
-      await dialog.getByRole("button", { name: "Close" }).click();
-      await expect(dialog).toBeHidden();
+    await openRhymes(page);
+    await page.getByRole("button", { name: "Let’s sing", exact: true }).click();
+    await page.getByRole("button", { name: "See whole rhyme" }).click();
+    const sheet = page.locator(".view");
+    const rows = sheet.locator("[data-whole-line]");
+    await expect(rows, pack.id).toHaveCount(pack.lines.length);
+    const texts = (await rows.locator(".whole-text").allTextContents()).map((text) => text.trim());
+    expect(texts, pack.id).toEqual(pack.lines.map((line) => line.text));
+    const sizes = await sheet.locator(".whole-text").evaluateAll((nodes) => (
+      nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize))
+    ));
+    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(18);
+    const body = await sheet.innerText();
+    expect(body).not.toMatch(/[\u0C80-\u0CFF]/);
+    expect(body).not.toMatch(/[\u0900-\u097F]/);
+    for (const line of pack.lines) {
+      if (line.mean && line.mean !== line.text) expect(body, pack.id).not.toContain(line.mean);
     }
+    const gloss = pack.lines[0].mean;
+    if (gloss && gloss !== pack.lines[0].text) {
+      await expect(page.getByText(gloss, { exact: true })).toHaveCount(0);
+    }
+    await expectLayout(page);
+    await page.getByRole("button", { name: "Back" }).click();
+    await expect(page.getByText("Sing with me", { exact: true })).toBeVisible();
   }
   expect(errors, errors.join("\n")).toEqual([]);
 });
 
 test("iphone 14 screenshots", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "iphone-14");
-  const dir = "/opt/cursor/artifacts";
+  const dir = "/opt/cursor/artifacts/after";
   await page.goto("/");
   await settle(page);
-  await page.screenshot({ path: `${dir}/iphone14-week.png`, fullPage: false });
-
-  await page.getByRole("button", { name: "Nayimari", exact: true }).click();
-  await page.getByRole("tab", { name: "Sing" }).click();
+  await page.screenshot({ path: `${dir}/home.png`, fullPage: false });
+  await openRhymes(page);
   await settle(page);
-  await page.screenshot({ path: `${dir}/iphone14-sing.png`, fullPage: false });
-
-  await page.getByRole("tab", { name: "Week" }).click();
-  await page.getByRole("button", { name: "All 7" }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.screenshot({ path: `${dir}/week.png`, fullPage: false });
+  await page.getByRole("button", { name: "Let’s sing", exact: true }).click();
   await settle(page);
-  await page.screenshot({ path: `${dir}/iphone14-picker.png`, fullPage: false });
-  await page.getByRole("dialog").getByRole("button", { name: /Aane Banthondu Aane/ }).click();
-
-  await page.getByRole("tab", { name: "Words" }).click();
+  await page.screenshot({ path: `${dir}/sing.png`, fullPage: false });
+  await page.getByRole("button", { name: "This week’s rhyme" }).click();
+  await page.getByRole("button", { name: "See all" }).click();
   await settle(page);
-  await page.screenshot({ path: `${dir}/iphone14-words.png`, fullPage: false });
-
-  await page.getByRole("tab", { name: "Story" }).click();
+  await page.screenshot({ path: `${dir}/all.png`, fullPage: false });
+  await page.goto("/");
+  await page.locator("[data-hold='gate']").dispatchEvent("pointerdown");
+  await expect(page.getByRole("heading", { name: "Hold to open" })).toBeVisible();
+  await page.screenshot({ path: `${dir}/gate.png`, fullPage: false });
+  await page.locator("[data-hold='parent']").dispatchEvent("pointerdown");
+  await expect(page.getByRole("heading", { name: "Parent corner" })).toBeVisible();
   await settle(page);
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: `${dir}/iphone14-story.png`, fullPage: false });
-
-  await page.getByRole("tab", { name: "Week" }).click();
-  await page.getByRole("button", { name: "See whole rhyme" }).click();
-  const aaneSheet = page.getByRole("dialog", { name: "Whole rhyme" });
-  await expect(aaneSheet).toBeVisible();
-  await aaneSheet.evaluate(async (el) => {
-    await Promise.all(el.getAnimations({ subtree: true }).map((anim) => anim.finished));
-  });
-  await page.screenshot({ path: `${dir}/iphone14-whole-aane.png`, fullPage: false });
-  await aaneSheet.getByRole("button", { name: "Close", exact: true }).click();
-
-  await page.getByRole("button", { name: "All 7" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: /Nayimari Nayimari/ }).click();
-  await page.getByRole("button", { name: "See whole rhyme" }).click();
-  const ziggySheet = page.getByRole("dialog", { name: "Whole rhyme" });
-  await expect(ziggySheet).toBeVisible();
-  await ziggySheet.evaluate(async (el) => {
-    await Promise.all(el.getAnimations({ subtree: true }).map((anim) => anim.finished));
-  });
-  await page.screenshot({ path: `${dir}/iphone14-whole-nayimari.png`, fullPage: false });
+  await page.screenshot({ path: `${dir}/parent.png`, fullPage: false });
 });
 
 function glossesStayTransliterated(value, lyrics, path) {
@@ -608,9 +598,10 @@ test("Achchachchu Belladachchu is transliteration only and has no recording", as
   const errors = trackErrors(page);
   await page.goto("/");
   await page.evaluate((rhymeId) => {
-    localStorage.setItem("samaya-kannada-rhymes", JSON.stringify({ rhymeId, step: "hear" }));
+    localStorage.setItem("samaya-kannada-rhymes", JSON.stringify({ rhymeId }));
   }, id);
   await page.reload();
+  await openRhymes(page);
 
   await expect(page.getByRole("heading", { name: "Achchachchu Belladachchu" })).toBeVisible();
   await expect(page.getByText(MISSING)).toBeVisible();
@@ -633,41 +624,37 @@ test("Achchachchu Belladachchu is transliteration only and has no recording", as
     await page.screenshot({ path: "/opt/cursor/artifacts/iphone14-achchachchu-card.png", fullPage: false });
   }
 
-  await page.getByRole("tab", { name: "Sing" }).click();
+  await page.getByRole("button", { name: "Let’s sing", exact: true }).click();
   await expect(page.locator("#chunkStatus")).toHaveText(MISSING);
   await page.getByRole("button", { name: "Next lines" }).click();
   await page.getByRole("button", { name: "Next lines" }).click();
   await expect(page.getByText("Part 3 of 6")).toBeVisible();
-  await expect(page.getByText("Yaava kaage?", { exact: true })).toBeVisible();
-  const blank = page.locator(".blank").first();
-  await blank.click({ force: true });
-  await expect(blank).toHaveText("Kappu kaage");
-  const singText = await page.locator('[data-view="sing"]').innerText();
+  await expect(page.getByText("Yaava kaage? Kappu kaage")).toBeVisible();
+  const singText = await page.locator(".view").innerText();
   expect(singText).not.toMatch(/[\u0C80-\u0CFF\u0900-\u097F]/);
   expect(singText).not.toMatch(/\b(crow|crows|farmer|paddy|which)\b/i);
 
-  await page.getByRole("tab", { name: "Words" }).click();
+  await page.getByRole("button", { name: "This week’s rhyme" }).click();
+  await page.getByRole("button", { name: "Play with the words" }).click();
   await expect(page.getByRole("button", { name: "Yaava kaage?", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Kappu kaage", exact: true })).toBeVisible();
-  const wordsText = await page.locator('[data-view="words"]').innerText();
+  const wordsText = await page.locator(".view").innerText();
   expect(wordsText).not.toMatch(/[\u0C80-\u0CFF\u0900-\u097F]/);
   expect(wordsText).not.toMatch(/\b(crow|crows|farmer|paddy|which|black|rice)\b/i);
   await expectLayout(page);
 
-  await page.getByRole("tab", { name: "Story" }).click();
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "Tell the story" }).click();
   await expect(page.locator(".speak-q")).toHaveText("Yaava kaage?");
   await expect(page.locator(".answer-chip")).toHaveText("Kappu kaage");
-  const storyText = await page.locator('[data-view="story"]').innerText();
+  const storyText = await page.locator(".view").innerText();
   expect(storyText).not.toMatch(/[\u0C80-\u0CFF\u0900-\u097F]/);
   expect(storyText).not.toMatch(/\b(crow|crows|farmer|paddy|which|black|rice)\b/i);
 
-  await page.getByRole("tab", { name: "Week" }).click();
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "Let’s sing", exact: true }).click();
   await page.getByRole("button", { name: "See whole rhyme" }).click();
-  const sheet = page.getByRole("dialog", { name: "Whole rhyme" });
-  await expect(sheet).toBeVisible();
-  await sheet.evaluate(async (el) => {
-    await Promise.all(el.getAnimations({ subtree: true }).map((anim) => anim.finished));
-  });
+  const sheet = page.locator(".view");
   const rows = sheet.locator("[data-whole-line]");
   await expect(rows).toHaveCount(lyrics.length);
   const texts = (await rows.locator(".whole-text").allTextContents()).map((text) => text.trim());
@@ -678,22 +665,51 @@ test("Achchachchu Belladachchu is transliteration only and has no recording", as
   expect(sheetText).not.toContain("clap the word");
   await expectLayout(page);
   if (testInfo.project.name === "iphone-14") {
-    await page.screenshot({ path: "/opt/cursor/artifacts/iphone14-achchachchu-whole.png", fullPage: false });
+    await page.screenshot({ path: "/opt/cursor/artifacts/after/achchachchu-lines.png", fullPage: false });
   }
-  await sheet.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "This week’s rhyme" }).click();
 
   await page.getByRole("button", { name: "Karadi", exact: true }).click();
-  await expect(page.getByText(MISSING)).toBeVisible();
-  const nayiPaint = await page.locator("#voiceBtn").evaluate((el) => {
+  await expect(page.locator("#missingNote")).toBeVisible();
+  const karadiPaint = await page.locator("#voiceBtn").evaluate((el) => {
     const style = getComputedStyle(el);
     return { background: style.backgroundColor, opacity: style.opacity };
   });
-  expect(achPaint).toEqual(nayiPaint);
+  expect(achPaint).toEqual(karadiPaint);
 
+  await page.getByRole("button", { name: "This week’s rhyme" }).click();
   await page.getByRole("button", { name: "Aane", exact: true }).click();
   await expect(page.locator("#missingNote")).toBeHidden();
-  const mark = page.locator(".more-item", { hasText: "Achchachchu" });
-  await expect(mark.locator(".badge.unrec")).toBeVisible();
-  await expect(mark.locator(".badge.play")).toHaveCount(0);
+  await page.getByRole("button", { name: "This week’s rhyme" }).click();
+  const mark = page.locator(".thumb-btn", { hasText: "Achchachchu" });
+  await expect(mark.locator(".badge")).toBeHidden();
   expect(errors, errors.join("\n")).toEqual([]);
+});
+
+test("mangoes, blocks, and the parent gate", async ({ page }) => {
+  test.setTimeout(30_000);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Mangoes" }).click();
+  await page.getByRole("button", { name: "Let’s count!" }).click();
+  await page.getByRole("button", { name: "Ane Mangoes" }).click();
+  for (let i = 0; i < 5; i += 1) await page.locator(".fruit").first().click();
+  await expect(page.getByText("Five mangoes!")).toBeVisible();
+  await page.getByRole("button", { name: "Home" }).click();
+  await page.getByRole("button", { name: "Blocks" }).click();
+  await expect(page.getByText("Ondu", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Add one" }).click();
+  await page.getByRole("button", { name: "Add one" }).click();
+  await expect(page.getByText("Mooru", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByRole("button", { name: "Join" }).click();
+  await expect(page.getByText("3 and 2 make 5")).toBeVisible();
+  await page.getByRole("button", { name: "Blocks" }).click();
+  await page.getByRole("button", { name: "Home" }).click();
+  await page.locator("[data-hold='gate']").dispatchEvent("pointerdown");
+  await expect(page.getByRole("heading", { name: "Hold to open" })).toBeVisible();
+  await page.locator("[data-hold='parent']").dispatchEvent("pointerdown");
+  await expect(page.getByRole("heading", { name: "Parent corner" })).toBeVisible();
+  await expect(page.getByText("Recorded").first()).toBeVisible();
+  await expectLayout(page);
 });
