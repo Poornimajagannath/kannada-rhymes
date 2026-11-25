@@ -4,14 +4,17 @@ A phone page for one Kannada rhyme a week. Amma and Samaya hear it, fill the bla
 
 Open it at [https://poornimajagannath.github.io/kannada-rhymes/](https://poornimajagannath.github.io/kannada-rhymes/) after it is published from `main`.
 
-## The four pages
+## The pages
 
-- **Week** — this week’s picture, the Hear / Fill / Play / Lead steps, and Amma’s recording. **See whole rhyme** lists every line.
-- **Sing** — two lines at a time. Amma’s line, then Samaya’s, with a glowing blank. Tap the blank when you want to show the word. Any try counts. **See whole rhyme** is here too, when you need the rest of the song.
-- **Words** — clap the chunks of a word, then notice the rhyme twins. It is noticing, not a quiz.
-- **Story** — the picture, the steps in order, and one line for Samaya to say.
+Home is Samaya’s. Three doors: Rhymes, Mangoes, and Blocks. Hold the ring at the bottom, then hold again, for Amma.
 
-The bottom bar switches pages. **All 7** opens every rhyme. The rhyme you pick, and the week step you tap, stay on this phone.
+- **This week** — the picture, Amma’s voice, and Let’s sing. More rhymes sit underneath. The rhyme you pick stays on this phone.
+- **Sing with me** — two lines at a time, in English letters. Next lines walks the rest of the song. See whole rhyme lists every line.
+- **All rhymes** — the seven pictures. Amma’s voice, or not yet.
+- **Play with the words** and **Tell the story** — under this week’s rhyme, past the pictures. Clap the chunks, notice the twins, then say the line.
+- **Mangoes** — count five things into a basket with Ane, Myna, Kapi, or Ziggy.
+- **Blocks** — a quiet count. Ondu, eradu, mooru, then three and two make five.
+- **Parent corner** — which clips are recorded, and what each door is for.
 
 ## Add Amma’s recording
 

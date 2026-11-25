@@ -3,49 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#F1F0EF" />
+<meta name="theme-color" content="#FFD15C" />
 <meta name="description" content="Samaya’s Kannada rhymes: one song a week, sung with Amma." />
 <meta name="apple-mobile-web-app-title" content="Kannada Rhymes" />
 <title>Samaya’s Kannada Rhymes</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%236A4E39' width='16' height='16' rx='3'/%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23C8341A' width='16' height='16' rx='3'/%3E%3C/svg%3E" />
+<link rel="preload" href="fonts/Nunito.ttf" as="font" type="font/ttf" crossorigin />
 <link rel="preload" href="fonts/NotoSans.ttf" as="font" type="font/ttf" crossorigin />
 <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div class="app" id="app" data-rhyme="aane">
+  <div class="app" id="app" data-screen="home">
     <main class="views" id="views"></main>
-    <nav class="tabs" role="tablist" aria-label="Learning steps">
-      <button class="tab is-on" type="button" role="tab" data-tab="week" aria-selected="true">Week<span class="dot-ind"></span></button>
-      <button class="tab" type="button" role="tab" data-tab="sing" aria-selected="false">Sing<span class="dot-ind"></span></button>
-      <button class="tab" type="button" role="tab" data-tab="words" aria-selected="false">Words<span class="dot-ind"></span></button>
-      <button class="tab" type="button" role="tab" data-tab="story" aria-selected="false">Story<span class="dot-ind"></span></button>
-    </nav>
-  </div>
-  <div class="picker" id="picker" hidden>
-    <button class="picker-backdrop" type="button" data-close-picker aria-label="Close the rhyme list"></button>
-    <div class="picker-sheet" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
-      <div class="picker-head">
-        <div>
-          <p class="eyebrow">All seven rhymes</p>
-          <h2 class="title" id="pickerTitle">Choose this week</h2>
-        </div>
-        <button class="picker-close" type="button" data-close-picker>Close</button>
-      </div>
-      <div class="picker-list" id="pickerList"></div>
-    </div>
-  </div>
-  <div class="picker" id="whole" hidden>
-    <button class="picker-backdrop" type="button" data-close-whole aria-label="Close the whole rhyme"></button>
-    <div class="picker-sheet" role="dialog" aria-modal="true" aria-labelledby="wholeTitle">
-      <div class="picker-head">
-        <div>
-          <p class="eyebrow">All the lines</p>
-          <h2 class="title" id="wholeTitle">Whole rhyme</h2>
-        </div>
-        <button class="picker-close" type="button" data-close-whole>Close</button>
-      </div>
-      <div id="wholeBody"></div>
-    </div>
   </div>
   <noscript class="noscript">Samaya’s Kannada Rhymes needs JavaScript to turn the pages. The songs themselves are still yours to sing.</noscript>
   <script src="js/rhymes.js"></script>
